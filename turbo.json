@@ -7,11 +7,13 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".output/**"]
     },
-    "lint": {
-      "dependsOn": ["^lint"]
+    "//#lint": {},
+    "//#lint:fix": {
+      "cache": false
     },
-    "format": {
-      "dependsOn": ["^format"]
+    "//#format": {},
+    "//#format:fix": {
+      "cache": false
     },
     "typecheck": {
       "dependsOn": ["^typecheck"]
