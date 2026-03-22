@@ -1,4 +1,9 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router"
+import {
+  Outlet,
+  HeadContent,
+  Scripts,
+  createRootRoute,
+} from "@tanstack/react-router"
 
 import appCss from "@workspace/ui/globals.css?url"
 
@@ -13,7 +18,11 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "TanStack Start Starter",
+        title: "openpilot compatibility",
+      },
+      {
+        name: "description",
+        content: "Check if your car is compatible with openpilot",
       },
     ],
     links: [
@@ -23,12 +32,23 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  component: RootLayout,
   shellComponent: RootDocument,
 })
 
+function RootLayout() {
+  return (
+    <div className="flex min-h-svh flex-col">
+      <main className="flex flex-1 flex-col">
+        <Outlet />
+      </main>
+    </div>
+  )
+}
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
