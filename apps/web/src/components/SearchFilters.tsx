@@ -1,4 +1,5 @@
 import { Input } from "@workspace/ui/components/input"
+import { Slider } from "@workspace/ui/components/slider"
 import {
   Select,
   SelectContent,
@@ -21,18 +22,26 @@ import {
   SORT_LABELS,
   VEHICLE_MAKES,
   VEHICLE_CONNECTORS,
+  MIN_VEHICLE_YEAR,
+  MAX_VEHICLE_YEAR,
 } from "@/lib/vehicles"
 
 interface SearchFiltersProps {
   query: string
   make: string
   connector: string
+  minYear?: number
+  maxYear?: number
   features: Array<FeatureFilter>
   sort: SortKey
   hasActiveFilters: boolean
   onQueryChange: (value: string) => void
   onMakeChange: (value: string | null) => void
   onConnectorChange: (value: string | null) => void
+  onYearChange: (
+    minYear: number | undefined,
+    maxYear: number | undefined
+  ) => void
   onFeaturesChange: (value: Array<FeatureFilter>) => void
   onSortChange: (value: SortKey) => void
   onReset: () => void
@@ -42,12 +51,15 @@ export function SearchFilters({
   query,
   make,
   connector,
+  minYear,
+  maxYear,
   features,
   sort,
   hasActiveFilters,
   onQueryChange,
   onMakeChange,
   onConnectorChange,
+  onYearChange,
   onFeaturesChange,
   onSortChange,
   onReset,
@@ -111,33 +123,55 @@ export function SearchFilters({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <ToggleGroup
-            value={features}
-            onValueChange={(value) =>
-              onFeaturesChange(value as Array<FeatureFilter>)
-            }
-          >
-            {FEATURE_FILTER_OPTIONS.map((feature) => (
-              <ToggleGroupItem
-                key={feature}
-                value={feature}
-                variant="outline"
-                size="sm"
-              >
-                {FEATURE_FILTER_LABELS[feature]}
-                <Badge variant="secondary" className="ml-1.5">
-                  {FEATURE_FILTER_COUNTS[feature]}
-                </Badge>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+        <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="flex w-full flex-col gap-2 md:w-64">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>{minYear ?? MIN_VEHICLE_YEAR}</span>
+              <span>Years</span>
+              <span>{maxYear ?? MAX_VEHICLE_YEAR}</span>
+            </div>
+            <Slider
+              min={MIN_VEHICLE_YEAR}
+              max={MAX_VEHICLE_YEAR}
+              value={[minYear ?? MIN_VEHICLE_YEAR, maxYear ?? MAX_VEHICLE_YEAR]}
+              onValueChange={(values) => {
+                const [min, max] = values as [number, number]
+                onYearChange(
+                  min === MIN_VEHICLE_YEAR ? undefined : min,
+                  max === MAX_VEHICLE_YEAR ? undefined : max
+                )
+              }}
+            />
+          </div>
 
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={onReset}>
-              Reset
-            </Button>
-          )}
+          <div className="flex flex-wrap gap-2 md:ml-auto">
+            <ToggleGroup
+              value={features}
+              onValueChange={(value) =>
+                onFeaturesChange(value as Array<FeatureFilter>)
+              }
+            >
+              {FEATURE_FILTER_OPTIONS.map((feature) => (
+                <ToggleGroupItem
+                  key={feature}
+                  value={feature}
+                  variant="outline"
+                  size="sm"
+                >
+                  {FEATURE_FILTER_LABELS[feature]}
+                  <Badge variant="secondary" className="ml-1.5">
+                    {FEATURE_FILTER_COUNTS[feature]}
+                  </Badge>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={onReset}>
+                Reset
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </section>

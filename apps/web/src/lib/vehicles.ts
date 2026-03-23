@@ -360,6 +360,10 @@ export const VEHICLE_MAKES = [
   ...new Set(VEHICLE_ROWS.map((row) => row.make)),
 ].sort((left, right) => left.localeCompare(right))
 
+const allYears = VEHICLE_ROWS.flatMap((row) => row.yearsNumeric)
+export const MIN_VEHICLE_YEAR = Math.min(...allYears)
+export const MAX_VEHICLE_YEAR = Math.max(...allYears)
+
 const brandLogoMapping: Record<string, string> = {
   Acura: "Logo-Acura.png",
   Audi: "Logo-Audi.png",

@@ -13,6 +13,8 @@ type IndexSearch = {
   q?: string
   make?: string
   connector?: string
+  minYear?: number
+  maxYear?: number
   features?: Array<FeatureFilter>
   sort?: SortKey
 }
@@ -27,6 +29,8 @@ export const Route = createFileRoute("/")({
     q: parseOptionalString(search.q),
     make: parseOptionalString(search.make),
     connector: parseOptionalString(search.connector),
+    minYear: parseOptionalNumber(search.minYear),
+    maxYear: parseOptionalNumber(search.maxYear),
     features: parseFeatureFilters(search.features),
     sort: parseSort(search.sort),
   }),
@@ -48,6 +52,15 @@ function parseOptionalString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
     : undefined
+}
+
+function parseOptionalNumber(value: unknown) {
+  if (typeof value === "number") return value
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    if (!Number.isNaN(parsed)) return parsed
+  }
+  return undefined
 }
 
 function parseFeatureFilters(value: unknown) {
@@ -216,6 +229,8 @@ function IndexRoute() {
   const query = search.q ?? ""
   const make = search.make ?? ""
   const connector = search.connector ?? ""
+  const minYear = search.minYear
+  const maxYear = search.maxYear
   const features = search.features ?? []
   const sort = search.sort ?? DEFAULT_SORT
   const deferredQuery = useDeferredValue(query)
@@ -230,6 +245,13 @@ function IndexRoute() {
         return false
       }
 
+      if (
+        (minYear !== undefined && (row.latestYear ?? 0) < minYear) ||
+        (maxYear !== undefined && (row.earliestYear ?? Infinity) > maxYear)
+      ) {
+        return false
+      }
+
       if (!matchesFeatures(row, features)) {
         return false
       }
@@ -238,13 +260,15 @@ function IndexRoute() {
     })
 
     return sortRows(rows, deferredQuery, sort)
-  }, [connector, deferredQuery, features, make, sort])
+  }, [connector, deferredQuery, features, make, sort, minYear, maxYear])
 
   const activeFilterCount =
     Number(query.length > 0) +
     Number(make.length > 0) +
     Number(connector.length > 0) +
-    features.length
+    features.length +
+    Number(minYear !== undefined) +
+    Number(maxYear !== undefined)
 
   const hasActiveFilters = activeFilterCount > 0 || sort !== DEFAULT_SORT
 
@@ -262,6 +286,8 @@ function IndexRoute() {
           patch.connector !== undefined
             ? normalizeSearchString(patch.connector)
             : previous.connector,
+        minYear: patch.minYear !== undefined ? patch.minYear : previous.minYear,
+        maxYear: patch.maxYear !== undefined ? patch.maxYear : previous.maxYear,
         features:
           patch.features !== undefined
             ? normalizeFeatureSearch(patch.features)
@@ -316,6 +342,8 @@ function IndexRoute() {
         query={query}
         make={make}
         connector={connector}
+        minYear={minYear}
+        maxYear={maxYear}
         features={features}
         sort={sort}
         hasActiveFilters={hasActiveFilters}
@@ -323,6 +351,9 @@ function IndexRoute() {
         onMakeChange={(value) => replaceSearch({ make: value ?? undefined })}
         onConnectorChange={(value) =>
           replaceSearch({ connector: value ?? undefined })
+        }
+        onYearChange={(min, max) =>
+          replaceSearch({ minYear: min, maxYear: max })
         }
         onFeaturesChange={(value) =>
           replaceSearch({ features: value ?? undefined })

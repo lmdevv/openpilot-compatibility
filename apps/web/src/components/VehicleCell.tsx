@@ -26,10 +26,11 @@ export function VehicleCell({ row }: VehicleCellProps) {
       </div>
       <p className="mt-2 text-lg font-semibold">{row.model}</p>
       <div className="mt-2 flex flex-wrap gap-1">
-        {row.years && <Badge variant="outline">{row.years}</Badge>}
-        {row.harnessConnector && (
-          <Badge variant="outline">{row.harnessConnector}</Badge>
-        )}
+        {row.yearsNumeric?.map((year) => (
+          <Badge key={year} variant="outline">
+            {year}
+          </Badge>
+        ))}
       </div>
       <p className="mt-2 text-sm text-muted-foreground">{row.name}</p>
     </div>
