@@ -1,0 +1,2 @@
+- Always run `pnpm run check` before finishing
+- This is monorepo with turborepo project
