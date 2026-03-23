@@ -15,7 +15,7 @@ export function NotesCell({ row }: NotesCellProps) {
             href={row.video}
             target="_blank"
             rel="noreferrer"
-            className="highlight text-xs"
+            className="highlight text-sm"
           >
             Drive video
           </a>
@@ -25,7 +25,7 @@ export function NotesCell({ row }: NotesCellProps) {
             href={row.setupVideo}
             target="_blank"
             rel="noreferrer"
-            className="highlight text-xs"
+            className="highlight text-sm"
           >
             Setup video
           </a>
@@ -35,14 +35,14 @@ export function NotesCell({ row }: NotesCellProps) {
       {notes.length > 0 ? (
         <ul className="mt-2 space-y-1">
           {notes.map((note) => (
-            <li key={note} className="flex gap-2 text-xs text-muted-foreground">
+            <li key={note} className="flex gap-2 text-sm text-muted-foreground">
               <span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground" />
               <span>{note}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="mt-2 text-sm text-muted-foreground">
           No additional notes
         </p>
       )}

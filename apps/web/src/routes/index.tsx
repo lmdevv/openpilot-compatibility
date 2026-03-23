@@ -286,9 +286,7 @@ function IndexRoute() {
     <div className="min-h-screen bg-background">
       <section className="border-b">
         <div className="container mx-auto px-4 py-8 md:py-12">
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            Openpilot Vehicle Compatibility
-          </h1>
+          <h1>Openpilot Vehicle Compatibility</h1>
           <p className="mt-4 text-lg text-muted-foreground">
             If you have a modern car and some programming skills, you can likely
             add support for your car. Watch{" "}
@@ -335,7 +333,7 @@ function IndexRoute() {
 
       <section className="container mx-auto px-4 py-6">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Showing {filteredRows.length} of {VEHICLE_STATS.rows} vehicles
           </p>
         </div>

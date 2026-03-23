@@ -12,11 +12,11 @@ export function SupportList({ bullets }: SupportListProps) {
         <li key={`${bullet.label}-${bullet.text}`} className="flex gap-2">
           <Badge
             variant={getBadgeVariant(bullet.tone)}
-            className="shrink-0 text-[10px] uppercase"
+            className="shrink-0 text-sm uppercase"
           >
             {bullet.label}
           </Badge>
-          <span className="text-xs">{bullet.text}</span>
+          <span className="text-sm">{bullet.text}</span>
         </li>
       ))}
     </ul>
