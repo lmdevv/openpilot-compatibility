@@ -33,16 +33,16 @@ export function VehicleTable({ rows }: VehicleTableProps) {
           <TableBody>
             {rows.map((row) => (
               <TableRow key={row.id}>
-                <TableCell>
+                <TableCell className="align-top">
                   <VehicleCell row={row} />
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-top">
                   <SupportList bullets={row.supportBullets} />
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-top">
                   <RequirementsCell row={row} />
                 </TableCell>
-                <TableCell>
+                <TableCell className="align-top whitespace-normal">
                   <NotesCell row={row} />
                 </TableCell>
               </TableRow>
