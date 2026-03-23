@@ -1,46 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useDeferredValue, useMemo } from "react"
 import {
-  FEATURE_FILTER_COUNTS,
-  FEATURE_FILTER_LABELS,
   FEATURE_FILTER_OPTIONS,
-  SORT_LABELS,
   SORT_OPTIONS,
-  VEHICLE_CONNECTORS,
-  VEHICLE_MAKES,
   VEHICLE_ROWS,
   VEHICLE_STATS,
-  getBrandLogo,
 } from "@/lib/vehicles"
-import type {
-  FeatureFilter,
-  SortKey,
-  SupportBulletTone,
-  VehicleRow,
-} from "@/lib/vehicles"
-import { Input } from "@workspace/ui/components/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
-import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@workspace/ui/components/toggle-group"
-import { Card, CardContent } from "@workspace/ui/components/card"
+import type { FeatureFilter, SortKey, VehicleRow } from "@/lib/vehicles"
+import { VehicleTable, SearchFilters, EmptyState } from "@/components"
 
 type IndexSearch = {
   q?: string
@@ -347,108 +314,24 @@ function IndexRoute() {
         </div>
       </section>
 
-      <section className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <Input
-              type="search"
-              value={query}
-              onChange={(event) => replaceSearch({ q: event.target.value })}
-              placeholder="Search vehicles..."
-              className="md:max-w-sm"
-            />
-
-            <div className="flex flex-wrap gap-2 md:ml-auto">
-              <Select
-                value={make}
-                onValueChange={(value) =>
-                  replaceSearch({ make: value ?? undefined })
-                }
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Make" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Makes</SelectItem>
-                  {VEHICLE_MAKES.map((makeOption) => (
-                    <SelectItem key={makeOption} value={makeOption}>
-                      {makeOption}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={connector}
-                onValueChange={(value) =>
-                  replaceSearch({ connector: value ?? undefined })
-                }
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Harness" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Harnesses</SelectItem>
-                  {VEHICLE_CONNECTORS.map((connectorOption) => (
-                    <SelectItem key={connectorOption} value={connectorOption}>
-                      {connectorOption}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={sort}
-                onValueChange={(value) =>
-                  replaceSearch({ sort: (value as SortKey) ?? undefined })
-                }
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((sortOption) => (
-                    <SelectItem key={sortOption} value={sortOption}>
-                      {SORT_LABELS[sortOption]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <ToggleGroup
-              value={features}
-              onValueChange={(value) =>
-                replaceSearch({
-                  features: (value as Array<FeatureFilter>) ?? undefined,
-                })
-              }
-            >
-              {FEATURE_FILTER_OPTIONS.map((feature) => (
-                <ToggleGroupItem
-                  key={feature}
-                  value={feature}
-                  variant="outline"
-                  size="sm"
-                >
-                  {FEATURE_FILTER_LABELS[feature]}
-                  <Badge variant="secondary" className="ml-1.5">
-                    {FEATURE_FILTER_COUNTS[feature]}
-                  </Badge>
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={resetFilters}>
-                Reset
-              </Button>
-            )}
-          </div>
-        </div>
-      </section>
+      <SearchFilters
+        query={query}
+        make={make}
+        connector={connector}
+        features={features}
+        sort={sort}
+        hasActiveFilters={hasActiveFilters}
+        onQueryChange={(value) => replaceSearch({ q: value })}
+        onMakeChange={(value) => replaceSearch({ make: value ?? undefined })}
+        onConnectorChange={(value) =>
+          replaceSearch({ connector: value ?? undefined })
+        }
+        onFeaturesChange={(value) =>
+          replaceSearch({ features: value ?? undefined })
+        }
+        onSortChange={(value) => replaceSearch({ sort: value })}
+        onReset={resetFilters}
+      />
 
       <section className="container mx-auto px-4 py-6">
         <div className="mb-4 flex items-center justify-between">
@@ -457,189 +340,10 @@ function IndexRoute() {
           </p>
         </div>
 
-        <div className="hidden lg:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-80">Vehicle</TableHead>
-                <TableHead className="w-72">Support</TableHead>
-                <TableHead className="w-64">Requirements</TableHead>
-                <TableHead>Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>
-                    <VehicleCell row={row} />
-                  </TableCell>
-                  <TableCell>
-                    <SupportList bullets={row.supportBullets} />
-                  </TableCell>
-                  <TableCell>
-                    <RequirementsCell row={row} />
-                  </TableCell>
-                  <TableCell>
-                    <NotesCell row={row} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <VehicleTable rows={filteredRows} />
 
-        <div className="grid gap-4 lg:hidden">
-          {filteredRows.map((row) => (
-            <Card key={row.id}>
-              <CardContent className="pt-4">
-                <VehicleCell row={row} />
-                <div className="mt-4">
-                  <SupportList bullets={row.supportBullets} />
-                </div>
-                <div className="mt-4">
-                  <RequirementsCell row={row} />
-                </div>
-                <div className="mt-4">
-                  <NotesCell row={row} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredRows.length === 0 && (
-          <div className="mt-8 flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-            <p className="text-sm text-muted-foreground">No vehicles found</p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4"
-              onClick={resetFilters}
-            >
-              Clear filters
-            </Button>
-          </div>
-        )}
+        {filteredRows.length === 0 && <EmptyState onReset={resetFilters} />}
       </section>
-    </div>
-  )
-}
-
-function VehicleCell({ row }: { row: VehicleRow }) {
-  const logoUrl = getBrandLogo(row.make)
-
-  return (
-    <div>
-      <div className="flex items-center gap-3">
-        {logoUrl && (
-          <img
-            src={logoUrl}
-            alt={`${row.make} logo`}
-            className="h-8 w-auto object-contain"
-            loading="lazy"
-          />
-        )}
-        <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          {row.make}
-        </p>
-      </div>
-      <p className="mt-2 text-base font-semibold">{row.model}</p>
-      <div className="mt-2 flex flex-wrap gap-1">
-        {row.years && <Badge variant="outline">{row.years}</Badge>}
-        {row.harnessConnector && (
-          <Badge variant="outline">{row.harnessConnector}</Badge>
-        )}
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground">{row.name}</p>
-    </div>
-  )
-}
-
-function SupportList({ bullets }: { bullets: VehicleRow["supportBullets"] }) {
-  return (
-    <ul className="space-y-2">
-      {bullets.map((bullet) => (
-        <li key={`${bullet.label}-${bullet.text}`} className="flex gap-2">
-          <Badge
-            variant={getBadgeVariant(bullet.tone)}
-            className="shrink-0 text-[10px] uppercase"
-          >
-            {bullet.label}
-          </Badge>
-          <span className="text-xs">{bullet.text}</span>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-function getBadgeVariant(tone: SupportBulletTone) {
-  if (tone === "warning") return "destructive"
-  if (tone === "info") return "secondary"
-  return "default"
-}
-
-function RequirementsCell({ row }: { row: VehicleRow }) {
-  return (
-    <div className="space-y-2">
-      <div>
-        <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          Package
-        </p>
-        <p className="mt-1 text-xs">{row.packageSummary}</p>
-      </div>
-      <div>
-        <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-          Harness
-        </p>
-        <p className="mt-1 text-xs">{row.connectorSummary}</p>
-      </div>
-    </div>
-  )
-}
-
-function NotesCell({ row }: { row: VehicleRow }) {
-  const notes = [...row.footnotes, ...row.setupNotes]
-
-  return (
-    <div>
-      <div className="flex flex-wrap gap-2">
-        {row.video && (
-          <a
-            href={row.video}
-            target="_blank"
-            rel="noreferrer"
-            className="highlight text-xs"
-          >
-            Drive video
-          </a>
-        )}
-        {row.setupVideo && (
-          <a
-            href={row.setupVideo}
-            target="_blank"
-            rel="noreferrer"
-            className="highlight text-xs"
-          >
-            Setup video
-          </a>
-        )}
-      </div>
-
-      {notes.length > 0 ? (
-        <ul className="mt-2 space-y-1">
-          {notes.map((note) => (
-            <li key={note} className="flex gap-2 text-xs text-muted-foreground">
-              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground" />
-              <span>{note}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-2 text-xs text-muted-foreground">
-          No additional notes
-        </p>
-      )}
     </div>
   )
 }
