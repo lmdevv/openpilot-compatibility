@@ -322,6 +322,28 @@ function IndexRoute() {
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
             Openpilot Vehicle Compatibility
           </h1>
+          <p className="mt-4 text-lg text-muted-foreground">
+            If you have a modern car and some programming skills, you can likely
+            add support for your car. Watch{" "}
+            <a
+              href="https://youtu.be/XxPS5TpTUnI"
+              target="_blank"
+              rel="noreferrer"
+              className="highlight"
+            >
+              this talk
+            </a>{" "}
+            and check out the{" "}
+            <a
+              href="https://docs.comma.ai"
+              target="_blank"
+              rel="noreferrer"
+              className="highlight"
+            >
+              docs
+            </a>{" "}
+            to learn more.
+          </p>
         </div>
       </section>
 
@@ -587,7 +609,7 @@ function NotesCell({ row }: { row: VehicleRow }) {
             href={row.video}
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-primary hover:underline"
+            className="highlight text-xs"
           >
             Drive video
           </a>
@@ -597,7 +619,7 @@ function NotesCell({ row }: { row: VehicleRow }) {
             href={row.setupVideo}
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-primary hover:underline"
+            className="highlight text-xs"
           >
             Setup video
           </a>
