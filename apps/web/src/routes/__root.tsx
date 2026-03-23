@@ -18,7 +18,7 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "openpilot compatibility",
+        title: "openpilot vehicle compatibility",
       },
       {
         name: "description",
@@ -26,6 +26,11 @@ export const Route = createRootRoute({
       },
     ],
     links: [
+      {
+        rel: "icon",
+        href: "/favicon.png",
+        type: "image/png",
+      },
       {
         rel: "stylesheet",
         href: appCss,

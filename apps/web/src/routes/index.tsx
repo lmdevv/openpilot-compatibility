@@ -65,12 +65,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       {
-        title: "Openpilot Vehicle Compatibility",
+        title: "openpilot vehicle compatibility",
       },
       {
         name: "description",
-        content:
-          "Vehicle compatibility table for openpilot with search and filters.",
+        content: "Vehicle compatibility table for openpilot.",
       },
     ],
   }),
