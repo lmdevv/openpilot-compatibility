@@ -276,27 +276,21 @@ function IndexRoute() {
     void navigate({
       replace: true,
       resetScroll: false,
-      search: (previous) => ({
-        q: patch.q !== undefined ? normalizeSearchString(patch.q) : previous.q,
-        make:
-          patch.make !== undefined
-            ? normalizeSearchString(patch.make)
-            : previous.make,
-        connector:
-          patch.connector !== undefined
-            ? normalizeSearchString(patch.connector)
-            : previous.connector,
-        minYear: patch.minYear !== undefined ? patch.minYear : previous.minYear,
-        maxYear: patch.maxYear !== undefined ? patch.maxYear : previous.maxYear,
-        features:
-          patch.features !== undefined
-            ? normalizeFeatureSearch(patch.features)
-            : previous.features,
-        sort:
-          patch.sort !== undefined
-            ? normalizeSortSearch(patch.sort)
-            : previous.sort,
-      }),
+      search: (previous) => {
+        const next = { ...previous }
+
+        if ("q" in patch) next.q = normalizeSearchString(patch.q)
+        if ("make" in patch) next.make = normalizeSearchString(patch.make)
+        if ("connector" in patch)
+          next.connector = normalizeSearchString(patch.connector)
+        if ("minYear" in patch) next.minYear = patch.minYear
+        if ("maxYear" in patch) next.maxYear = patch.maxYear
+        if ("features" in patch)
+          next.features = normalizeFeatureSearch(patch.features)
+        if ("sort" in patch) next.sort = normalizeSortSearch(patch.sort)
+
+        return next
+      },
     })
   }
 
