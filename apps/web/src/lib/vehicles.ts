@@ -360,6 +360,47 @@ export const VEHICLE_MAKES = [
   ...new Set(VEHICLE_ROWS.map((row) => row.make)),
 ].sort((left, right) => left.localeCompare(right))
 
+const brandLogoMapping: Record<string, string> = {
+  Acura: "Logo-Acura.png",
+  Audi: "Logo-Audi.png",
+  BMW: "Logo-BMW.png",
+  Buick: "Logo-Buick.png",
+  Cadillac: "Logo-Cadillac.png",
+  Chevrolet: "Logo-Chevrolet.png",
+  Chrysler: "Logo-Chrysler.png",
+  CUPRA: "Logo-CUPRA.png",
+  Dodge: "Logo-Dodge.png",
+  Ford: "Logo-Ford.png",
+  GMC: "Logo-GMC.png",
+  Genesis: "Logo-Genesis.png",
+  Honda: "Logo-Honda.png",
+  Hyundai: "Logo-Hyundai.png",
+  Infiniti: "Logo-Infiniti.png",
+  Jeep: "Logo-Jeep.png",
+  Kia: "Logo-Kia.png",
+  "Land Rover": "Logo-Land-Rover.png",
+  Lexus: "Logo-Lexus.png",
+  Lincoln: "Logo-Lincoln.png",
+  MAN: "Logo-MAN.png",
+  Mazda: "Logo-Mazda.png",
+  "Mercedes-Benz": "Logo-Mercedes-Benz.png",
+  Nissan: "Logo-Nissan.png",
+  Ram: "Logo-Ram.png",
+  Rivian: "Logo-Rivian.png",
+  SEAT: "Logo-SEAT.png",
+  Škoda: "Logo-Škoda.png",
+  Subaru: "Logo-Subaru.png",
+  Tesla: "Logo-Tesla.png",
+  Toyota: "Logo-Toyota.png",
+  Volkswagen: "Logo-Volkswagen.png",
+  Volvo: "Logo-Volvo.png",
+}
+
+export function getBrandLogo(make: string): string | null {
+  const logoFile = brandLogoMapping[make]
+  return logoFile ? `/brand-icons/${logoFile}` : null
+}
+
 export const VEHICLE_CONNECTORS = [
   ...new Set(
     VEHICLE_ROWS.map((row) => row.harnessConnector).filter(

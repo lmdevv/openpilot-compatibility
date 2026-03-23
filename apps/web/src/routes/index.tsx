@@ -10,6 +10,7 @@ import {
   VEHICLE_MAKES,
   VEHICLE_ROWS,
   VEHICLE_STATS,
+  getBrandLogo,
 } from "@/lib/vehicles"
 import type {
   FeatureFilter,
@@ -503,12 +504,24 @@ function IndexRoute() {
 }
 
 function VehicleCell({ row }: { row: VehicleRow }) {
+  const logoUrl = getBrandLogo(row.make)
+
   return (
     <div>
-      <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-        {row.make}
-      </p>
-      <p className="mt-1 text-base font-semibold">{row.model}</p>
+      <div className="flex items-center gap-3">
+        {logoUrl && (
+          <img
+            src={logoUrl}
+            alt={`${row.make} logo`}
+            className="h-8 w-auto object-contain"
+            loading="lazy"
+          />
+        )}
+        <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+          {row.make}
+        </p>
+      </div>
+      <p className="mt-2 text-base font-semibold">{row.model}</p>
       <div className="mt-2 flex flex-wrap gap-1">
         {row.years && <Badge variant="outline">{row.years}</Badge>}
         {row.harnessConnector && (
