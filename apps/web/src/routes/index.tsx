@@ -306,7 +306,17 @@ function IndexRoute() {
     <div className="min-h-screen bg-background">
       <section className="border-b">
         <div className="container mx-auto px-4 py-8 md:py-12">
-          <h1>Openpilot Vehicle Compatibility</h1>
+          <h1>
+            <a
+              href="https://comma.ai/openpilot"
+              target="_blank"
+              rel="noreferrer"
+              className="highlight"
+            >
+              Openpilot
+            </a>{" "}
+            Vehicle Compatibility
+          </h1>
           <p className="mt-4 text-lg text-muted-foreground">
             If you have a modern car and some programming skills, you can likely
             add support for your car. Watch{" "}
