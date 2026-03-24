@@ -36,12 +36,14 @@ jobs:
         id: sync
         run: |
           TARGET="apps/web/src/lib/vehicles.json"
-          if cmp -s /tmp/upstream-vehicles.json "$TARGET"; then
+          cp /tmp/upstream-vehicles.json "$TARGET"
+          git add "$TARGET"
+          if git diff --cached --quiet -- "$TARGET"; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No changes from upstream."
           else
-            cp /tmp/upstream-vehicles.json "$TARGET"
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Upstream has new data — proceeding."
           fi
 
       - name: Install dependencies and validate
@@ -56,6 +58,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/web/src/lib/vehicles.json
           git commit -m "chore: sync vehicles.json from commaai/website"
           git push origin HEAD:master
