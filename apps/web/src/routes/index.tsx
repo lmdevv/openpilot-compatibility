@@ -8,6 +8,7 @@ import {
 } from "@/lib/vehicles"
 import type { FeatureFilter, SortKey, VehicleRow } from "@/lib/vehicles"
 import { VehicleTable, SearchFilters, EmptyState } from "@/components"
+import { ModeToggle } from "@workspace/ui/components/mode-toggle"
 
 type IndexSearch = {
   q?: string
@@ -294,39 +295,45 @@ function IndexRoute() {
     <div className="min-h-screen bg-background">
       <section className="border-b">
         <div className="container mx-auto px-4 py-8 md:py-12">
-          <h1>
-            <a
-              href="https://comma.ai/openpilot"
-              target="_blank"
-              rel="noreferrer"
-              className="highlight"
-            >
-              Openpilot
-            </a>{" "}
-            Vehicle Compatibility
-          </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
-            If you have a modern car and some programming skills, you can likely
-            add support for your car. Watch{" "}
-            <a
-              href="https://youtu.be/XxPS5TpTUnI"
-              target="_blank"
-              rel="noreferrer"
-              className="highlight"
-            >
-              this talk
-            </a>{" "}
-            and check out the{" "}
-            <a
-              href="https://docs.comma.ai"
-              target="_blank"
-              rel="noreferrer"
-              className="highlight"
-            >
-              docs
-            </a>{" "}
-            to learn more.
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="max-w-3xl">
+              <h1>
+                <a
+                  href="https://comma.ai/openpilot"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="highlight"
+                >
+                  Openpilot
+                </a>{" "}
+                Vehicle Compatibility
+              </h1>
+              <p className="mt-4 text-lg text-muted-foreground">
+                If you have a modern car and some programming skills, you can
+                likely add support for your car. Watch{" "}
+                <a
+                  href="https://youtu.be/XxPS5TpTUnI"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="highlight"
+                >
+                  this talk
+                </a>{" "}
+                and check out the{" "}
+                <a
+                  href="https://docs.comma.ai"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="highlight"
+                >
+                  docs
+                </a>{" "}
+                to learn more.
+              </p>
+            </div>
+
+            <ModeToggle />
+          </div>
         </div>
       </section>
 
