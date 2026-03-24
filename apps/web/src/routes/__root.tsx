@@ -5,6 +5,7 @@ import {
   ScriptOnce,
   createRootRoute,
 } from "@tanstack/react-router"
+import { HotkeysProvider } from "@tanstack/react-hotkeys"
 
 import appCss from "@workspace/ui/globals.css?url"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
@@ -58,13 +59,15 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="openpilot-theme">
-      <div className="flex min-h-svh flex-col">
-        <main className="flex flex-1 flex-col">
-          <Outlet />
-        </main>
-      </div>
-    </ThemeProvider>
+    <HotkeysProvider>
+      <ThemeProvider defaultTheme="system" storageKey="openpilot-theme">
+        <div className="flex min-h-svh flex-col">
+          <main className="flex flex-1 flex-col">
+            <Outlet />
+          </main>
+        </div>
+      </ThemeProvider>
+    </HotkeysProvider>
   )
 }
 

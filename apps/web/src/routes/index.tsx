@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useDeferredValue, useMemo } from "react"
+import { useDeferredValue, useMemo, useRef, useCallback } from "react"
+import { useHotkeys } from "@tanstack/react-hotkeys"
 import {
   FEATURE_FILTER_OPTIONS,
   SORT_OPTIONS,
@@ -229,6 +230,7 @@ function IndexRoute() {
   const features = search.features ?? []
   const sort = search.sort ?? DEFAULT_SORT
   const deferredQuery = useDeferredValue(query)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const filteredRows = useMemo(() => {
     const rows = VEHICLE_ROWS.filter((row) => {
@@ -290,6 +292,15 @@ function IndexRoute() {
     })
   }
 
+  const focusSearch = useCallback(() => {
+    searchInputRef.current?.focus()
+  }, [])
+
+  useHotkeys([
+    { hotkey: "/", callback: focusSearch },
+    { hotkey: "R", callback: resetFilters },
+  ])
+
   return (
     <div className="min-h-screen bg-background">
       <section className="border-b">
@@ -344,6 +355,7 @@ function IndexRoute() {
         features={features}
         sort={sort}
         hasActiveFilters={hasActiveFilters}
+        searchInputRef={searchInputRef}
         onQueryChange={(value) => replaceSearch({ q: value })}
         onMakeChange={(value) => replaceSearch({ make: value ?? undefined })}
         onYearChange={(min, max) =>

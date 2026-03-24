@@ -33,6 +33,7 @@ interface SearchFiltersProps {
   features: Array<FeatureFilter>
   sort: SortKey
   hasActiveFilters: boolean
+  searchInputRef?: React.RefObject<HTMLInputElement | null>
   onQueryChange: (value: string) => void
   onMakeChange: (value: string | null) => void
   onYearChange: (
@@ -52,6 +53,7 @@ export function SearchFilters({
   features,
   sort,
   hasActiveFilters,
+  searchInputRef,
   onQueryChange,
   onMakeChange,
   onYearChange,
@@ -63,13 +65,22 @@ export function SearchFilters({
     <section className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <Input
-            type="search"
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Search vehicles..."
-            className="md:max-w-sm"
-          />
+          <div className="relative md:max-w-sm">
+            <Input
+              ref={searchInputRef}
+              type="search"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder="Search vehicles..."
+              className="pr-10"
+            />
+            <Badge
+              variant="outline"
+              className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs"
+            >
+              /
+            </Badge>
+          </div>
 
           <div className="flex flex-wrap gap-2 md:ml-auto">
             <Select value={make} onValueChange={onMakeChange}>
@@ -150,6 +161,9 @@ export function SearchFilters({
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={onReset}>
                 Reset
+                <Badge variant="outline" className="ml-1.5 text-xs">
+                  R
+                </Badge>
               </Button>
             )}
           </div>
