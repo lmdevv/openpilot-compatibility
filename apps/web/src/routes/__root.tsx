@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router"
 
 import appCss from "@workspace/ui/globals.css?url"
+import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -43,11 +44,13 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    <div className="flex min-h-svh flex-col">
-      <main className="flex flex-1 flex-col">
-        <Outlet />
-      </main>
-    </div>
+    <ThemeProvider defaultTheme="system" storageKey="openpilot-theme">
+      <div className="flex min-h-svh flex-col">
+        <main className="flex flex-1 flex-col">
+          <Outlet />
+        </main>
+      </div>
+    </ThemeProvider>
   )
 }
 
