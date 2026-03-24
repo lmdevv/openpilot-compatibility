@@ -24,6 +24,7 @@
     "coverage/",
     "pnpm-lock.yaml",
     ".pnpm-store/",
-    ".agents/"
+    ".agents/",
+    "apps/web/src/lib/vehicles.json"
   ]
 }
