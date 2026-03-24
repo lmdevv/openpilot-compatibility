@@ -19,6 +19,13 @@ export type FeatureFilter =
   | "tight-turns"
   | "has-video"
 
+export type FeatureFilterMode = "include" | "exclude"
+
+export type FeatureFilterEntry = {
+  feature: FeatureFilter
+  mode: FeatureFilterMode
+}
+
 export type SortKey = "best-match" | "make-a-z" | "newest" | "oldest"
 
 type RawVehicle = {
@@ -545,7 +552,64 @@ export const FEATURE_FILTER_OPTIONS = Object.keys(
   featureFilterLabels
 ) as Array<FeatureFilter>
 
+const FEATURE_FILTER_ID_SET = new Set<FeatureFilter>(FEATURE_FILTER_OPTIONS)
+
 export const FEATURE_FILTER_LABELS = featureFilterLabels
+
+/** Parse a single URL token: `all-speeds` (include) or `!tight-turns` (exclude). */
+export function parseFeatureFilterUrlToken(
+  token: string
+): FeatureFilterEntry | null {
+  const isExclude = token.startsWith("!")
+  const raw = (isExclude ? token.slice(1) : token) as FeatureFilter
+  if (!FEATURE_FILTER_ID_SET.has(raw)) return null
+  return { feature: raw, mode: isExclude ? "exclude" : "include" }
+}
+
+/**
+ * Normalize raw search `features` into validated URL tokens (last repeated key wins).
+ */
+export function parseFeatureFilterUrlStrings(
+  value: unknown
+): Array<string> | undefined {
+  const values = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? [value]
+      : []
+  const byFeature = new Map<FeatureFilter, string>()
+  for (const entry of values) {
+    if (typeof entry !== "string") continue
+    const parsed = parseFeatureFilterUrlToken(entry)
+    if (!parsed) continue
+    byFeature.set(
+      parsed.feature,
+      parsed.mode === "exclude" ? `!${parsed.feature}` : parsed.feature
+    )
+  }
+  const arr = [...byFeature.values()]
+  return arr.length > 0 ? arr : undefined
+}
+
+export function urlStringsToFeatureEntries(
+  strings: Array<string>
+): Array<FeatureFilterEntry> {
+  const byFeature = new Map<FeatureFilter, FeatureFilterEntry>()
+  for (const entry of strings) {
+    const parsed = parseFeatureFilterUrlToken(entry)
+    if (!parsed) continue
+    byFeature.set(parsed.feature, parsed)
+  }
+  return [...byFeature.values()]
+}
+
+export function featureEntriesToUrlStrings(
+  entries: Array<FeatureFilterEntry>
+): Array<string> {
+  return entries.map((e) =>
+    e.mode === "exclude" ? `!${e.feature}` : e.feature
+  )
+}
 
 export const FEATURE_FILTER_COUNTS: Record<FeatureFilter, number> = {
   "all-speeds": VEHICLE_ROWS.filter((row) => row.alcAllSpeeds).length,

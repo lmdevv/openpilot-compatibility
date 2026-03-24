@@ -2,12 +2,19 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useDeferredValue, useMemo, useRef, useCallback } from "react"
 import { useHotkeys } from "@tanstack/react-hotkeys"
 import {
-  FEATURE_FILTER_OPTIONS,
   SORT_OPTIONS,
   VEHICLE_ROWS,
   VEHICLE_STATS,
+  parseFeatureFilterUrlStrings,
+  urlStringsToFeatureEntries,
+  featureEntriesToUrlStrings,
 } from "@/lib/vehicles"
-import type { FeatureFilter, SortKey, VehicleRow } from "@/lib/vehicles"
+import type {
+  FeatureFilter,
+  FeatureFilterEntry,
+  SortKey,
+  VehicleRow,
+} from "@/lib/vehicles"
 import {
   VehicleTable,
   SearchFilters,
@@ -21,13 +28,13 @@ type IndexSearch = {
   make?: string
   minYear?: number
   maxYear?: number
-  features?: Array<FeatureFilter>
+  /** URL tokens: `featureId` or `!featureId` for exclude */
+  features?: Array<string>
   sort?: SortKey
 }
 
 const DEFAULT_SORT: SortKey = "best-match"
 
-const FEATURE_FILTER_SET = new Set<FeatureFilter>(FEATURE_FILTER_OPTIONS)
 const SORT_OPTION_SET = new Set<SortKey>(SORT_OPTIONS)
 
 export const Route = createFileRoute("/")({
@@ -36,7 +43,7 @@ export const Route = createFileRoute("/")({
     make: parseOptionalString(search.make),
     minYear: parseOptionalNumber(search.minYear),
     maxYear: parseOptionalNumber(search.maxYear),
-    features: parseFeatureFilters(search.features),
+    features: parseFeatureFilterUrlStrings(search.features),
     sort: parseSort(search.sort),
   }),
   head: () => ({
@@ -67,22 +74,6 @@ function parseOptionalNumber(value: unknown) {
   return undefined
 }
 
-function parseFeatureFilters(value: unknown) {
-  const values = Array.isArray(value)
-    ? value
-    : typeof value === "string"
-      ? [value]
-      : []
-
-  const featureFilters = values.filter(
-    (entry): entry is FeatureFilter =>
-      typeof entry === "string" &&
-      FEATURE_FILTER_SET.has(entry as FeatureFilter)
-  )
-
-  return featureFilters.length > 0 ? [...new Set(featureFilters)] : undefined
-}
-
 function parseSort(value: unknown) {
   return typeof value === "string" && SORT_OPTION_SET.has(value as SortKey)
     ? (value as SortKey)
@@ -101,22 +92,27 @@ function matchesQuery(row: VehicleRow, query: string) {
     .every((token) => row.searchText.includes(token))
 }
 
-function matchesFeatures(row: VehicleRow, features: Array<FeatureFilter>) {
-  return features.every((feature) => {
-    switch (feature) {
-      case "all-speeds":
-        return row.alcAllSpeeds
-      case "alc-min-speed":
-        return row.alcMinMph !== null
-      case "acc-auto-resume":
-        return row.accAutoResume
-      case "experimental-mode":
-        return row.experimentalMode
-      case "tight-turns":
-        return row.tightTurnWarning
-      case "has-video":
-        return row.hasVideo
-    }
+function rowMatchesFeature(row: VehicleRow, feature: FeatureFilter) {
+  switch (feature) {
+    case "all-speeds":
+      return row.alcAllSpeeds
+    case "alc-min-speed":
+      return row.alcMinMph !== null
+    case "acc-auto-resume":
+      return row.accAutoResume
+    case "experimental-mode":
+      return row.experimentalMode
+    case "tight-turns":
+      return row.tightTurnWarning
+    case "has-video":
+      return row.hasVideo
+  }
+}
+
+function matchesFeatures(row: VehicleRow, entries: Array<FeatureFilterEntry>) {
+  return entries.every((entry) => {
+    const matches = rowMatchesFeature(row, entry.feature)
+    return entry.mode === "include" ? matches : !matches
   })
 }
 
@@ -212,7 +208,7 @@ function normalizeSearchString(value: string | undefined) {
   return value && value.length > 0 ? value : undefined
 }
 
-function normalizeFeatureSearch(value: Array<FeatureFilter> | undefined) {
+function normalizeFeatureSearch(value: Array<string> | undefined) {
   return value && value.length > 0 ? value : undefined
 }
 
@@ -227,10 +223,14 @@ function IndexRoute() {
   const make = search.make ?? ""
   const minYear = search.minYear
   const maxYear = search.maxYear
-  const features = search.features ?? []
   const sort = search.sort ?? DEFAULT_SORT
   const deferredQuery = useDeferredValue(query)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const featureEntries = useMemo(
+    () => urlStringsToFeatureEntries(search.features ?? []),
+    [search.features]
+  )
 
   const filteredRows = useMemo(() => {
     const rows = VEHICLE_ROWS.filter((row) => {
@@ -245,7 +245,7 @@ function IndexRoute() {
         return false
       }
 
-      if (!matchesFeatures(row, features)) {
+      if (!matchesFeatures(row, featureEntries)) {
         return false
       }
 
@@ -253,12 +253,12 @@ function IndexRoute() {
     })
 
     return sortRows(rows, deferredQuery, sort)
-  }, [deferredQuery, features, make, sort, minYear, maxYear])
+  }, [deferredQuery, featureEntries, make, sort, minYear, maxYear])
 
   const activeFilterCount =
     Number(query.length > 0) +
     Number(make.length > 0) +
-    features.length +
+    featureEntries.length +
     Number(minYear !== undefined) +
     Number(maxYear !== undefined)
 
@@ -352,7 +352,7 @@ function IndexRoute() {
         make={make}
         minYear={minYear}
         maxYear={maxYear}
-        features={features}
+        featureEntries={featureEntries}
         sort={sort}
         hasActiveFilters={hasActiveFilters}
         searchInputRef={searchInputRef}
@@ -361,8 +361,13 @@ function IndexRoute() {
         onYearChange={(min, max) =>
           replaceSearch({ minYear: min, maxYear: max })
         }
-        onFeaturesChange={(value) =>
-          replaceSearch({ features: value ?? undefined })
+        onFeatureEntriesChange={(entries) =>
+          replaceSearch({
+            features:
+              entries.length > 0
+                ? featureEntriesToUrlStrings(entries)
+                : undefined,
+          })
         }
         onSortChange={(value) => replaceSearch({ sort: value })}
         onReset={resetFilters}
