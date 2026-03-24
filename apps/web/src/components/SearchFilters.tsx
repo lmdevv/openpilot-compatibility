@@ -144,7 +144,7 @@ export function SearchFilters({
     <section className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex flex-col gap-3 px-4 py-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <div className="relative md:max-w-xs">
+          <div className="relative min-w-0 flex-1 md:max-w-md">
             <Input
               ref={searchInputRef}
               type="search"
@@ -161,7 +161,7 @@ export function SearchFilters({
             </Badge>
           </div>
 
-          <div className="flex w-full items-center gap-2 md:w-48 md:shrink-0">
+          <div className="flex w-full items-center gap-2 md:w-64 md:shrink-0">
             <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
               {minYear ?? MIN_VEHICLE_YEAR}
             </span>
@@ -182,122 +182,122 @@ export function SearchFilters({
             </span>
           </div>
 
-          <Popover>
-            <PopoverTrigger>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
+          <div className="flex items-center gap-2 md:ml-auto md:shrink-0">
+            <Popover>
+              <PopoverTrigger>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <RiFilterLine className="size-4" />
+                  Filters
+                  {activeFeatureCount > 0 ? (
+                    <Badge variant="secondary" className="px-1.5 text-xs">
+                      {activeFeatureCount}
+                    </Badge>
+                  ) : null}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-[min(100vw-2rem,22rem)] gap-0 p-0"
               >
-                <RiFilterLine className="size-4" />
-                Filters
-                {activeFeatureCount > 0 ? (
-                  <Badge variant="secondary" className="px-1.5 text-xs">
-                    {activeFeatureCount}
-                  </Badge>
-                ) : null}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="w-[min(100vw-2rem,22rem)] gap-0 p-0"
-            >
-              <div className="flex items-center justify-between border-b px-2.5 py-2">
-                <span className="text-sm font-medium">Feature filters</span>
-                {activeFeatureCount > 0 ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    className="h-7 text-muted-foreground"
-                    onClick={clearAllFeatureFilters}
-                  >
-                    Clear all
-                  </Button>
-                ) : null}
-              </div>
-              <div className="flex max-h-[min(60vh,24rem)] flex-col gap-1 overflow-y-auto p-2">
-                {FEATURE_FILTER_OPTIONS.map((feature) => {
-                  const mode = getFeatureMode(featureEntries, feature)
-                  const count = FEATURE_FILTER_COUNTS[feature]
-                  const label = FEATURE_FILTER_LABELS[feature]
-
-                  return (
-                    <div
-                      key={feature}
-                      className="flex min-h-8 w-full items-stretch overflow-hidden rounded-none border border-border bg-background"
+                <div className="flex items-center justify-between border-b px-2.5 py-2">
+                  <span className="text-sm font-medium">Feature filters</span>
+                  {activeFeatureCount > 0 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      className="h-7 text-muted-foreground"
+                      onClick={clearAllFeatureFilters}
                     >
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                          "h-auto min-h-8 flex-1 justify-start gap-2 rounded-none border-0 px-2 py-1.5 text-left font-normal",
-                          mode === "include" && "bg-primary/10",
-                          mode === "exclude" && "bg-destructive/10"
-                        )}
-                        onClick={() => handleMainRowClick(feature)}
+                      Clear all
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="flex max-h-[min(60vh,24rem)] flex-col gap-1 overflow-y-auto p-2">
+                  {FEATURE_FILTER_OPTIONS.map((feature) => {
+                    const mode = getFeatureMode(featureEntries, feature)
+                    const count = FEATURE_FILTER_COUNTS[feature]
+                    const label = FEATURE_FILTER_LABELS[feature]
+
+                    return (
+                      <div
+                        key={feature}
+                        className="flex min-h-8 w-full items-stretch overflow-hidden rounded-none border border-border bg-background"
                       >
-                        <span className="flex size-4 shrink-0 items-center justify-center">
-                          {mode === "include" ? (
-                            <RiCheckLine className="size-4 text-primary" />
-                          ) : mode === "exclude" ? (
-                            <RiCloseLine className="size-4 text-destructive" />
-                          ) : (
-                            <span className="size-4 rounded-sm border border-border" />
-                          )}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-xs">
-                          {label}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className="shrink-0 text-[0.65rem]"
-                        >
-                          {count}
-                        </Badge>
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           className={cn(
-                            "inline-flex size-8 shrink-0 items-center justify-center border-0 bg-transparent text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring",
+                            "h-auto min-h-8 flex-1 justify-start gap-2 rounded-none border-0 px-2 py-1.5 text-left font-normal",
                             mode === "include" && "bg-primary/10",
                             mode === "exclude" && "bg-destructive/10"
                           )}
+                          onClick={() => handleMainRowClick(feature)}
                         >
-                          <RiArrowDownSLine className="size-4" />
-                          <span className="sr-only">
-                            {label} include or exclude options
+                          <span className="flex size-4 shrink-0 items-center justify-center">
+                            {mode === "include" ? (
+                              <RiCheckLine className="size-4 text-primary" />
+                            ) : mode === "exclude" ? (
+                              <RiCloseLine className="size-4 text-destructive" />
+                            ) : (
+                              <span className="size-4 rounded-sm border border-border" />
+                            )}
                           </span>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem
-                            onClick={() => setFeatureMode(feature, "include")}
+                          <span className="min-w-0 flex-1 truncate text-xs">
+                            {label}
+                          </span>
+                          <Badge
+                            variant="secondary"
+                            className="shrink-0 text-[0.65rem]"
                           >
-                            Include
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => setFeatureMode(feature, "exclude")}
+                            {count}
+                          </Badge>
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            className={cn(
+                              "inline-flex size-8 shrink-0 items-center justify-center border-0 bg-transparent text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring",
+                              mode === "include" && "bg-primary/10",
+                              mode === "exclude" && "bg-destructive/10"
+                            )}
                           >
-                            Exclude
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setFeatureMode(feature, null)}
-                          >
-                            Clear
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  )
-                })}
-              </div>
-            </PopoverContent>
-          </Popover>
+                            <RiArrowDownSLine className="size-4" />
+                            <span className="sr-only">
+                              {label} include or exclude options
+                            </span>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem
+                              onClick={() => setFeatureMode(feature, "include")}
+                            >
+                              Include
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => setFeatureMode(feature, "exclude")}
+                            >
+                              Exclude
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setFeatureMode(feature, null)}
+                            >
+                              Clear
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
 
-          <div className="md:ml-auto">
             <Select
               value={sort}
               onValueChange={(value) => onSortChange(value as SortKey)}
