@@ -503,6 +503,13 @@ export const VEHICLE_MAKES = [
   ...new Set(VEHICLE_ROWS.map((row) => row.make)),
 ].sort((left, right) => left.localeCompare(right))
 
+export const VEHICLE_MAKE_COUNTS: Record<string, number> = Object.fromEntries(
+  VEHICLE_MAKES.map((make) => [
+    make,
+    VEHICLE_ROWS.filter((row) => row.make === make).length,
+  ])
+)
+
 const allYears = VEHICLE_ROWS.flatMap((row) => row.yearsNumeric)
 export const MIN_VEHICLE_YEAR = Math.min(...allYears)
 export const MAX_VEHICLE_YEAR = Math.max(...allYears)

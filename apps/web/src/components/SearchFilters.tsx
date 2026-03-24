@@ -40,7 +40,6 @@ import {
   FEATURE_FILTER_OPTIONS,
   SORT_OPTIONS,
   SORT_LABELS,
-  VEHICLE_MAKES,
   MIN_VEHICLE_YEAR,
   MAX_VEHICLE_YEAR,
 } from "@/lib/vehicles"
@@ -81,7 +80,7 @@ function sortFeatureEntries(
 
 interface SearchFiltersProps {
   query: string
-  make: string
+  makes: Array<string>
   minYear?: number
   maxYear?: number
   featureEntries: Array<FeatureFilterEntry>
@@ -89,7 +88,7 @@ interface SearchFiltersProps {
   hasActiveFilters: boolean
   searchInputRef?: RefObject<HTMLInputElement | null>
   onQueryChange: (value: string) => void
-  onMakeChange: (value: string | null) => void
+  onRemoveMake: (make: string) => void
   onYearChange: (
     minYear: number | undefined,
     maxYear: number | undefined
@@ -101,7 +100,7 @@ interface SearchFiltersProps {
 
 export function SearchFilters({
   query,
-  make,
+  makes,
   minYear,
   maxYear,
   featureEntries,
@@ -109,7 +108,7 @@ export function SearchFilters({
   hasActiveFilters,
   searchInputRef,
   onQueryChange,
-  onMakeChange,
+  onRemoveMake,
   onYearChange,
   onFeatureEntriesChange,
   onSortChange,
@@ -298,21 +297,7 @@ export function SearchFilters({
             </PopoverContent>
           </Popover>
 
-          <div className="flex flex-wrap gap-2 md:ml-auto">
-            <Select value={make} onValueChange={onMakeChange}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Make" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Makes</SelectItem>
-                {VEHICLE_MAKES.map((makeOption) => (
-                  <SelectItem key={makeOption} value={makeOption}>
-                    {makeOption}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
+          <div className="md:ml-auto">
             <Select
               value={sort}
               onValueChange={(value) => onSortChange(value as SortKey)}
@@ -331,8 +316,27 @@ export function SearchFilters({
           </div>
         </div>
 
-        {(featureEntries.length > 0 || hasActiveFilters) && (
+        {(featureEntries.length > 0 ||
+          makes.length > 0 ||
+          hasActiveFilters) && (
           <div className="flex flex-wrap items-center gap-2">
+            {makes.map((m) => (
+              <Badge
+                key={`make-${m}`}
+                variant="secondary"
+                className="max-w-full gap-1 pr-1 text-xs font-normal"
+              >
+                <span className="truncate">{m}</span>
+                <button
+                  type="button"
+                  className="ml-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-none hover:bg-background/80"
+                  aria-label={`Remove ${m} filter`}
+                  onClick={() => onRemoveMake(m)}
+                >
+                  <RiCloseLine className="size-3.5 opacity-70" />
+                </button>
+              </Badge>
+            ))}
             {featureEntries.map((entry) => (
               <Badge
                 key={entry.feature}

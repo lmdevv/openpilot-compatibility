@@ -5,6 +5,7 @@ import {
   SORT_OPTIONS,
   VEHICLE_ROWS,
   VEHICLE_STATS,
+  VEHICLE_MAKES,
   parseFeatureFilterUrlStrings,
   urlStringsToFeatureEntries,
   featureEntriesToUrlStrings,
@@ -18,6 +19,7 @@ import type {
 import {
   VehicleTable,
   SearchFilters,
+  MakePicker,
   EmptyState,
   ReferenceFooter,
 } from "@/components"
@@ -25,7 +27,7 @@ import { ModeToggle } from "@workspace/ui/components/mode-toggle"
 
 type IndexSearch = {
   q?: string
-  make?: string
+  makes?: Array<string>
   minYear?: number
   maxYear?: number
   /** URL tokens: `featureId` or `!featureId` for exclude */
@@ -37,10 +39,12 @@ const DEFAULT_SORT: SortKey = "best-match"
 
 const SORT_OPTION_SET = new Set<SortKey>(SORT_OPTIONS)
 
+const VEHICLE_MAKES_SET = new Set(VEHICLE_MAKES)
+
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): IndexSearch => ({
     q: parseOptionalString(search.q),
-    make: parseOptionalString(search.make),
+    makes: parseOptionalMakes(search.makes),
     minYear: parseOptionalNumber(search.minYear),
     maxYear: parseOptionalNumber(search.maxYear),
     features: parseFeatureFilterUrlStrings(search.features),
@@ -63,6 +67,18 @@ export const Route = createFileRoute("/")({
 function parseOptionalString(value: unknown) {
   // Don't trim here - we want to preserve spaces for active typing
   return typeof value === "string" && value.length > 0 ? value : undefined
+}
+
+function parseOptionalMakes(value: unknown): Array<string> | undefined {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? [value]
+      : []
+  const valid = raw.filter(
+    (v): v is string => typeof v === "string" && VEHICLE_MAKES_SET.has(v)
+  )
+  return valid.length > 0 ? valid : undefined
 }
 
 function parseOptionalNumber(value: unknown) {
@@ -220,7 +236,7 @@ function IndexRoute() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const query = search.q ?? ""
-  const make = search.make ?? ""
+  const makes = search.makes ?? []
   const minYear = search.minYear
   const maxYear = search.maxYear
   const sort = search.sort ?? DEFAULT_SORT
@@ -232,9 +248,11 @@ function IndexRoute() {
     [search.features]
   )
 
+  const makesSet = useMemo(() => new Set(makes), [makes])
+
   const filteredRows = useMemo(() => {
     const rows = VEHICLE_ROWS.filter((row) => {
-      if (make && row.make !== make) {
+      if (makesSet.size > 0 && !makesSet.has(row.make)) {
         return false
       }
 
@@ -253,11 +271,11 @@ function IndexRoute() {
     })
 
     return sortRows(rows, deferredQuery, sort)
-  }, [deferredQuery, featureEntries, make, sort, minYear, maxYear])
+  }, [deferredQuery, featureEntries, makesSet, sort, minYear, maxYear])
 
   const activeFilterCount =
     Number(query.length > 0) +
-    Number(make.length > 0) +
+    makes.length +
     featureEntries.length +
     Number(minYear !== undefined) +
     Number(maxYear !== undefined)
@@ -272,7 +290,9 @@ function IndexRoute() {
         const next = { ...previous }
 
         if ("q" in patch) next.q = normalizeSearchString(patch.q)
-        if ("make" in patch) next.make = normalizeSearchString(patch.make)
+        if ("makes" in patch)
+          next.makes =
+            patch.makes && patch.makes.length > 0 ? patch.makes : undefined
         if ("minYear" in patch) next.minYear = patch.minYear
         if ("maxYear" in patch) next.maxYear = patch.maxYear
         if ("features" in patch)
@@ -282,6 +302,22 @@ function IndexRoute() {
         return next
       },
     })
+  }
+
+  function toggleMake(make: string) {
+    const current = new Set(makes)
+    if (current.has(make)) {
+      current.delete(make)
+    } else {
+      current.add(make)
+    }
+    const arr = [...current]
+    replaceSearch({ makes: arr.length > 0 ? arr : undefined })
+  }
+
+  function removeMake(make: string) {
+    const next = makes.filter((m) => m !== make)
+    replaceSearch({ makes: next.length > 0 ? next : undefined })
   }
 
   function resetFilters() {
@@ -344,12 +380,16 @@ function IndexRoute() {
 
             <ModeToggle />
           </div>
+
+          <div className="mt-6">
+            <MakePicker selectedMakes={makes} onToggleMake={toggleMake} />
+          </div>
         </div>
       </section>
 
       <SearchFilters
         query={query}
-        make={make}
+        makes={makes}
         minYear={minYear}
         maxYear={maxYear}
         featureEntries={featureEntries}
@@ -357,7 +397,7 @@ function IndexRoute() {
         hasActiveFilters={hasActiveFilters}
         searchInputRef={searchInputRef}
         onQueryChange={(value) => replaceSearch({ q: value })}
-        onMakeChange={(value) => replaceSearch({ make: value ?? undefined })}
+        onRemoveMake={removeMake}
         onYearChange={(min, max) =>
           replaceSearch({ minYear: min, maxYear: max })
         }
