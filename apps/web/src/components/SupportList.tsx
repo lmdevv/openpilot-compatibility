@@ -1,30 +1,63 @@
 import { Badge } from "@workspace/ui/components/badge"
-import type { VehicleRow, SupportBulletTone } from "@/lib/vehicles"
+import type { DetailNode } from "@/lib/vehicles"
 
 interface SupportListProps {
-  bullets: VehicleRow["supportBullets"]
+  nodes: Array<DetailNode>
+  badges: Array<{
+    id: string
+    label: string
+    variant: "default" | "secondary" | "destructive" | "outline"
+  }>
 }
 
-export function SupportList({ bullets }: SupportListProps) {
+export function SupportList({ nodes, badges }: SupportListProps) {
   return (
-    <ul className="space-y-2">
-      {bullets.map((bullet) => (
-        <li key={`${bullet.label}-${bullet.text}`} className="flex gap-2">
-          <Badge
-            variant={getBadgeVariant(bullet.tone)}
-            className="shrink-0 text-sm uppercase"
-          >
-            {bullet.label}
-          </Badge>
-          <span className="text-sm">{bullet.text}</span>
-        </li>
-      ))}
-    </ul>
-  )
-}
+    <div className="space-y-2">
+      <p className="text-sm leading-relaxed break-words">
+        {nodes.map((node, index) => {
+          if (node.type === "text") {
+            return <span key={index}>{node.content}</span>
+          }
 
-function getBadgeVariant(tone: SupportBulletTone) {
-  if (tone === "warning") return "destructive"
-  if (tone === "info") return "secondary"
-  return "default"
+          if (node.type === "strong") {
+            return (
+              <strong key={index} className="font-semibold text-foreground">
+                {node.content}
+              </strong>
+            )
+          }
+
+          if (node.type === "link") {
+            return (
+              <a
+                key={index}
+                href={node.href}
+                target="_blank"
+                rel="noreferrer"
+                className="highlight"
+              >
+                {node.content}
+              </a>
+            )
+          }
+
+          return null
+        })}
+      </p>
+
+      {badges.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {badges.map((badge) => (
+            <Badge
+              key={badge.id}
+              variant={badge.variant}
+              className="text-xs font-medium whitespace-nowrap"
+            >
+              {badge.label}
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }

@@ -101,18 +101,16 @@ function matchesFeatures(row: VehicleRow, features: Array<FeatureFilter>) {
   return features.every((feature) => {
     switch (feature) {
       case "all-speeds":
-        return row.laneCenteringAllSpeeds
-      case "speed-limited":
-        return (
-          row.laneCenteringMinMph !== null || row.adaptiveCruiseMinMph !== null
-        )
-      case "stop-and-go":
-        return row.adaptiveCruiseAutoResume
-      case "experimental":
+        return row.alcAllSpeeds
+      case "alc-min-speed":
+        return row.alcMinMph !== null
+      case "acc-auto-resume":
+        return row.accAutoResume
+      case "experimental-mode":
         return row.experimentalMode
-      case "tight-turn-warning":
+      case "tight-turns":
         return row.tightTurnWarning
-      case "video":
+      case "has-video":
         return row.hasVideo
     }
   })
@@ -165,7 +163,7 @@ function getMatchScore(row: VehicleRow, query: string) {
       score += 6
     }
 
-    if (row.detailPlainText.toLowerCase().includes(token)) {
+    if (row.searchText.includes(token)) {
       score += 4
     }
   }

@@ -1,12 +1,23 @@
 import vehiclesSource from "./vehicles.json"
 
+export type SupportBadge = {
+  id: string
+  label: string
+  variant: "default" | "secondary" | "destructive" | "outline"
+}
+
+export type DetailNode =
+  | { type: "text"; content: string }
+  | { type: "strong"; content: string }
+  | { type: "link"; content: string; href: string }
+
 export type FeatureFilter =
   | "all-speeds"
-  | "speed-limited"
-  | "stop-and-go"
-  | "experimental"
-  | "tight-turn-warning"
-  | "video"
+  | "alc-min-speed"
+  | "acc-auto-resume"
+  | "experimental-mode"
+  | "tight-turns"
+  | "has-video"
 
 export type SortKey = "best-match" | "make-a-z" | "newest" | "oldest"
 
@@ -26,14 +37,6 @@ type RawVehicle = {
 
 type VehicleDataset = Record<string, Array<RawVehicle>>
 
-export type SupportBulletTone = "positive" | "info" | "warning"
-
-export type SupportBullet = {
-  label: string
-  text: string
-  tone: SupportBulletTone
-}
-
 export type VehicleRow = {
   id: string
   make: string
@@ -50,32 +53,33 @@ export type VehicleRow = {
   connectorSummary: string
   video: string
   setupVideo: string
-  detailSentence: string
-  detailPlainText: string
-  supportBullets: Array<SupportBullet>
+  detailSentence: Array<DetailNode>
   footnotes: Array<string>
   setupNotes: Array<string>
-  laneCenteringMinMph: number | null
-  adaptiveCruiseMinMph: number | null
-  laneCenteringAllSpeeds: boolean
-  adaptiveCruiseAutoResume: boolean
+  // Filterable properties
+  alcMinMph: number | null
+  alcAllSpeeds: boolean
+  accMinMph: number | null
+  accAutoResume: boolean
   experimentalMode: boolean
   tightTurnWarning: boolean
   hasVideo: boolean
   hasSetupVideo: boolean
   hasNotes: boolean
+  // Badges for display
+  supportBadges: Array<SupportBadge>
   searchText: string
 }
 
 const vehiclesDataset = vehiclesSource as VehicleDataset
 
 const featureFilterLabels: Record<FeatureFilter, string> = {
-  "all-speeds": "Lane centering at all speeds",
-  "speed-limited": "Speed-limited support",
-  "stop-and-go": "Auto resume from stop",
-  experimental: "Experimental mode",
-  "tight-turn-warning": "Tight-turn caution",
-  video: "Has video",
+  "all-speeds": "ALC at all speeds",
+  "alc-min-speed": "ALC above specific speed",
+  "acc-auto-resume": "ACC auto resume from stop",
+  "experimental-mode": "Experimental mode features",
+  "tight-turns": "May struggle in tight turns",
+  "has-video": "Has install video",
 }
 
 const sortLabels: Record<SortKey, string> = {
@@ -99,146 +103,279 @@ function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim()
 }
 
+function parseDetailSentence(html: string): Array<DetailNode> {
+  const nodes: Array<DetailNode> = []
+  let position = 0
+
+  while (position < html.length) {
+    const openTagMatch = html
+      .slice(position)
+      .match(/^<([a-zA-Z][a-zA-Z0-9]*)\s*([^>]*)>/)
+
+    if (openTagMatch) {
+      const [fullMatch, tagName, attributesStr] = openTagMatch
+      const props: Record<string, string> = {}
+
+      // Parse attributes
+      const attrMatches = attributesStr.matchAll(
+        /([a-zA-Z-]+)=["']([^"']*)["']/g
+      )
+      for (const match of attrMatches) {
+        props[match[1]] = match[2]
+      }
+
+      // Find closing tag
+      const closeTagRegex = new RegExp(`</${tagName}>`, "i")
+      const closeTagMatch = html
+        .slice(position + fullMatch.length)
+        .match(closeTagRegex)
+
+      if (closeTagMatch && closeTagMatch.index !== undefined) {
+        const content = html.slice(
+          position + fullMatch.length,
+          position + fullMatch.length + closeTagMatch.index
+        )
+
+        const decodedContent = decodeHtmlEntities(content)
+
+        if (tagName.toLowerCase() === "strong") {
+          nodes.push({ type: "strong", content: decodedContent })
+        } else if (tagName.toLowerCase() === "a") {
+          nodes.push({
+            type: "link",
+            content: decodedContent,
+            href: props.href || "#",
+          })
+        }
+
+        position +=
+          fullMatch.length + closeTagMatch.index + closeTagMatch[0].length
+        continue
+      }
+    }
+
+    // Find next opening tag or end of string
+    const nextTagIndex = html.slice(position).indexOf("<")
+    if (nextTagIndex === -1) {
+      if (position < html.length) {
+        const text = decodeHtmlEntities(html.slice(position))
+        if (text) {
+          nodes.push({ type: "text", content: text })
+        }
+      }
+      break
+    }
+
+    if (nextTagIndex > 0) {
+      const text = decodeHtmlEntities(
+        html.slice(position, position + nextTagIndex)
+      )
+      if (text) {
+        nodes.push({ type: "text", content: text })
+      }
+    }
+
+    position += nextTagIndex
+  }
+
+  return nodes
+}
+
 function stripHtml(value: string) {
   const withBreaks = value.replace(/<br\s*\/?\s*>/gi, " ")
-
   return normalizeWhitespace(
     decodeHtmlEntities(withBreaks.replace(/<[^>]+>/g, " "))
   )
 }
 
-function parseSpeedPhrase(phrase: string | undefined) {
-  if (!phrase) {
-    return null
-  }
-
-  const match = phrase.match(/(\d+) mph/i)
-
+function parseSpeedMph(text: string): number | null {
+  const match = text.match(/(\d+)\s*mph/i)
   return match ? Number(match[1]) : null
 }
 
-function describeLaneCentering(phrase: string | undefined) {
-  if (!phrase) {
+function extractAlcInfo(detailText: string): {
+  minMph: number | null
+  allSpeeds: boolean
+  badgeText: string | null
+} {
+  // Match patterns like:
+  // "automated lane centering at all speeds"
+  // "automated lane centering above 3 mph"
+  // "automated lane centering while driving above 26 mph"
+  const allSpeedsMatch = detailText.match(
+    /automated lane centering\s*<strong>\s*at all speeds\s*<\/strong>/i
+  )
+  if (allSpeedsMatch) {
+    return { minMph: null, allSpeeds: true, badgeText: "ALC at all speeds" }
+  }
+
+  const aboveSpeedMatch = detailText.match(
+    /automated lane centering\s*<strong>\s*(above\s+\d+\s*mph)\s*<\/strong>/i
+  )
+  if (aboveSpeedMatch) {
+    const mph = parseSpeedMph(aboveSpeedMatch[1])
     return {
-      text: "Automates lane centering with openpilot support.",
+      minMph: mph,
       allSpeeds: false,
-      minMph: null,
+      badgeText: mph ? `ALC above ${mph} mph` : "ALC speed limited",
     }
   }
 
-  if (phrase === "at all speeds") {
+  const whileDrivingMatch = detailText.match(
+    /automated lane centering\s*<strong>\s*(while driving above\s+\d+\s*mph)\s*<\/strong>/i
+  )
+  if (whileDrivingMatch) {
+    const mph = parseSpeedMph(whileDrivingMatch[1])
     return {
-      text: "Keeps the vehicle centered in-lane at all speeds.",
-      allSpeeds: true,
-      minMph: null,
+      minMph: mph,
+      allSpeeds: false,
+      badgeText: mph ? `ALC above ${mph} mph` : "ALC speed limited",
     }
   }
 
-  const minMph = parseSpeedPhrase(phrase)
-  const normalizedPhrase = phrase.replace(/^while driving /i, "")
-
-  return {
-    text: `Keeps the vehicle centered in-lane ${normalizedPhrase}.`,
-    allSpeeds: false,
-    minMph,
+  // Check for plain text patterns (no HTML)
+  const plainAllSpeeds = /automated lane centering\s+at all speeds/i.test(
+    detailText
+  )
+  if (plainAllSpeeds) {
+    return { minMph: null, allSpeeds: true, badgeText: "ALC at all speeds" }
   }
+
+  const plainAboveMatch = detailText.match(
+    /automated lane centering\s+(?:above\s+|while driving above\s+)(\d+)\s*mph/i
+  )
+  if (plainAboveMatch) {
+    const mph = Number(plainAboveMatch[1])
+    return { minMph: mph, allSpeeds: false, badgeText: `ALC above ${mph} mph` }
+  }
+
+  return { minMph: null, allSpeeds: false, badgeText: null }
 }
 
-function describeAdaptiveCruise(phrase: string | undefined) {
-  if (!phrase) {
+function extractAccInfo(detailText: string): {
+  minMph: number | null
+  autoResume: boolean
+  badgeText: string | null
+} {
+  // Match "that automatically resumes from a stop"
+  const autoResumeMatch = detailText.match(
+    /adaptive cruise control\s*<strong>\s*that automatically resumes from a stop\s*<\/strong>/i
+  )
+  if (autoResumeMatch) {
+    return { minMph: null, autoResume: true, badgeText: "ACC auto resume" }
+  }
+
+  // Match "while driving above X mph"
+  const whileDrivingMatch = detailText.match(
+    /adaptive cruise control\s*<strong>\s*(while driving above\s+\d+\s*mph)\s*<\/strong>/i
+  )
+  if (whileDrivingMatch) {
+    const mph = parseSpeedMph(whileDrivingMatch[1])
     return {
-      text: "Maintains distance to the car ahead with adaptive cruise control.",
+      minMph: mph,
       autoResume: false,
-      minMph: null,
+      badgeText: mph ? `ACC above ${mph} mph` : "ACC speed limited",
     }
   }
 
-  if (phrase === "that automatically resumes from a stop") {
-    return {
-      text: "Maintains following distance and automatically resumes from a stop.",
-      autoResume: true,
-      minMph: null,
-    }
+  // Check for plain text patterns
+  const plainAutoResume =
+    /adaptive cruise control\s+that automatically resumes from a stop/i.test(
+      detailText
+    )
+  if (plainAutoResume) {
+    return { minMph: null, autoResume: true, badgeText: "ACC auto resume" }
   }
 
-  return {
-    text: `Maintains following distance ${phrase}.`,
-    autoResume: false,
-    minMph: parseSpeedPhrase(phrase),
+  const plainAboveMatch = detailText.match(
+    /adaptive cruise control\s+(?:while driving above\s+)?(\d+)\s*mph/i
+  )
+  if (plainAboveMatch) {
+    const mph = Number(plainAboveMatch[1])
+    return { minMph: mph, autoResume: false, badgeText: `ACC above ${mph} mph` }
   }
+
+  return { minMph: null, autoResume: false, badgeText: null }
 }
 
-function normalizeDetailSentence(detailSentence: string) {
-  const detailPlainText = stripHtml(detailSentence)
-  const supportBullets: Array<SupportBullet> = []
+function normalizeDetailSentence(detailSentence: string): {
+  badges: Array<SupportBadge>
+  alcMinMph: number | null
+  alcAllSpeeds: boolean
+  accMinMph: number | null
+  accAutoResume: boolean
+  experimentalMode: boolean
+  tightTurnWarning: boolean
+  nodes: Array<DetailNode>
+} {
+  const detailText = detailSentence.toLowerCase()
+  const badges: Array<SupportBadge> = []
 
-  const laneMatch = detailPlainText.match(
-    /automated lane centering(?: (at all speeds|above \d+ mph|while driving above \d+ mph))?/i
-  )
-  const accMatch = detailPlainText.match(
-    /adaptive cruise control(?: (that automatically resumes from a stop|while driving above \d+ mph))?/i
-  )
-
-  const laneCentering = describeLaneCentering(laneMatch?.[1])
-  const adaptiveCruise = describeAdaptiveCruise(accMatch?.[1])
-  const experimentalMode =
-    /Traffic light and stop sign handling is also available in Experimental mode\./i.test(
-      detailPlainText
-    )
-  const tightTurnWarning =
-    /This car may not be able to take tight turns on its own\./i.test(
-      detailPlainText
-    )
-
-  if (laneMatch) {
-    supportBullets.push({
-      label: "Lane centering",
-      text: laneCentering.text,
-      tone: "positive",
+  // Extract ALC info
+  const alcInfo = extractAlcInfo(detailSentence)
+  if (alcInfo.badgeText) {
+    badges.push({
+      id: "alc",
+      label: alcInfo.badgeText,
+      variant: "default",
     })
   }
 
-  if (accMatch) {
-    supportBullets.push({
-      label: "Adaptive cruise",
-      text: adaptiveCruise.text,
-      tone: "positive",
+  // Extract ACC info
+  const accInfo = extractAccInfo(detailSentence)
+  if (accInfo.badgeText) {
+    badges.push({
+      id: "acc",
+      label: accInfo.badgeText,
+      variant: "default",
     })
   }
 
+  // Check for experimental mode
+  const experimentalMode = /experimental mode/i.test(detailText)
   if (experimentalMode) {
-    supportBullets.push({
+    badges.push({
+      id: "experimental",
       label: "Experimental mode",
-      text: "Adds traffic light and stop sign handling.",
-      tone: "info",
+      variant: "secondary",
     })
   }
 
+  // Check for tight turn warning
+  const tightTurnWarning =
+    /may not be able to take tight turns on its own/i.test(detailText)
   if (tightTurnWarning) {
-    supportBullets.push({
-      label: "Steering note",
-      text: "May struggle with tighter turns without driver input.",
-      tone: "warning",
+    badges.push({
+      id: "tight-turns",
+      label: "May struggle in tight turns",
+      variant: "destructive",
     })
   }
 
-  if (supportBullets.length === 0) {
-    supportBullets.push({
-      label: "Support",
-      text: detailPlainText,
-      tone: "info",
+  // Check for traffic light handling
+  const trafficLightHandling = /traffic light and stop sign handling/i.test(
+    detailText
+  )
+  if (trafficLightHandling && !experimentalMode) {
+    badges.push({
+      id: "traffic-lights",
+      label: "Traffic light & stop sign handling",
+      variant: "secondary",
     })
   }
+
+  // Parse HTML into structured nodes
+  const nodes = parseDetailSentence(detailSentence)
 
   return {
-    detailPlainText,
-    supportBullets,
-    laneCenteringMinMph: laneCentering.minMph,
-    adaptiveCruiseMinMph: adaptiveCruise.minMph,
-    laneCenteringAllSpeeds: laneCentering.allSpeeds,
-    adaptiveCruiseAutoResume: adaptiveCruise.autoResume,
+    badges,
+    alcMinMph: alcInfo.minMph,
+    alcAllSpeeds: alcInfo.allSpeeds,
+    accMinMph: accInfo.minMph,
+    accAutoResume: accInfo.autoResume,
     experimentalMode,
     tightTurnWarning,
+    nodes,
   }
 }
 
@@ -246,7 +383,6 @@ function normalizePackage(packageText: string) {
   if (packageText === "All") {
     return "All trims and packages"
   }
-
   return packageText
 }
 
@@ -254,7 +390,6 @@ function normalizeConnector(harnessConnector: string) {
   if (!harnessConnector) {
     return "No harness listed"
   }
-
   return harnessConnector
 }
 
@@ -267,6 +402,8 @@ function parseYears(yearList: string) {
 }
 
 function buildSearchText(row: Omit<VehicleRow, "searchText">) {
+  const detailText = row.detailSentence.map((node) => node.content).join(" ")
+
   return [
     row.make,
     row.name,
@@ -276,10 +413,10 @@ function buildSearchText(row: Omit<VehicleRow, "searchText">) {
     row.packageSummary,
     row.harnessConnector,
     row.connectorSummary,
-    row.detailPlainText,
-    ...row.supportBullets.map((bullet) => `${bullet.label} ${bullet.text}`),
+    ...row.supportBadges.map((badge) => badge.label),
     ...row.footnotes,
     ...row.setupNotes,
+    detailText,
   ]
     .join(" ")
     .toLowerCase()
@@ -317,20 +454,19 @@ function normalizeVehicles(dataset: VehicleDataset) {
         connectorSummary,
         video: vehicle.video,
         setupVideo: vehicle.setup_video,
-        detailSentence: vehicle.detail_sentence,
-        detailPlainText: detail.detailPlainText,
-        supportBullets: detail.supportBullets,
+        detailSentence: detail.nodes,
         footnotes,
         setupNotes,
-        laneCenteringMinMph: detail.laneCenteringMinMph,
-        adaptiveCruiseMinMph: detail.adaptiveCruiseMinMph,
-        laneCenteringAllSpeeds: detail.laneCenteringAllSpeeds,
-        adaptiveCruiseAutoResume: detail.adaptiveCruiseAutoResume,
+        alcMinMph: detail.alcMinMph,
+        alcAllSpeeds: detail.alcAllSpeeds,
+        accMinMph: detail.accMinMph,
+        accAutoResume: detail.accAutoResume,
         experimentalMode: detail.experimentalMode,
         tightTurnWarning: detail.tightTurnWarning,
         hasVideo: Boolean(vehicle.video),
         hasSetupVideo: Boolean(vehicle.setup_video),
         hasNotes: footnotes.length > 0 || setupNotes.length > 0,
+        supportBadges: detail.badges,
       }
 
       rows.push({
@@ -420,17 +556,13 @@ export const FEATURE_FILTER_OPTIONS = Object.keys(
 export const FEATURE_FILTER_LABELS = featureFilterLabels
 
 export const FEATURE_FILTER_COUNTS: Record<FeatureFilter, number> = {
-  "all-speeds": VEHICLE_ROWS.filter((row) => row.laneCenteringAllSpeeds).length,
-  "speed-limited": VEHICLE_ROWS.filter(
-    (row) =>
-      row.laneCenteringMinMph !== null || row.adaptiveCruiseMinMph !== null
-  ).length,
-  "stop-and-go": VEHICLE_ROWS.filter((row) => row.adaptiveCruiseAutoResume)
+  "all-speeds": VEHICLE_ROWS.filter((row) => row.alcAllSpeeds).length,
+  "alc-min-speed": VEHICLE_ROWS.filter((row) => row.alcMinMph !== null).length,
+  "acc-auto-resume": VEHICLE_ROWS.filter((row) => row.accAutoResume).length,
+  "experimental-mode": VEHICLE_ROWS.filter((row) => row.experimentalMode)
     .length,
-  experimental: VEHICLE_ROWS.filter((row) => row.experimentalMode).length,
-  "tight-turn-warning": VEHICLE_ROWS.filter((row) => row.tightTurnWarning)
-    .length,
-  video: VEHICLE_ROWS.filter((row) => row.hasVideo).length,
+  "tight-turns": VEHICLE_ROWS.filter((row) => row.tightTurnWarning).length,
+  "has-video": VEHICLE_ROWS.filter((row) => row.hasVideo).length,
 }
 
 export const SORT_OPTIONS = Object.keys(sortLabels) as Array<SortKey>
