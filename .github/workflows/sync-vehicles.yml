@@ -1,0 +1,61 @@
+name: Sync vehicles data
+
+on:
+  schedule:
+    # Every 6 hours (UTC)
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: sync-vehicles
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.14.0
+        with:
+          enable-cache: true
+
+      - name: Fetch upstream vehicles.json
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/commaai/website/master/src/lib/vehicles.json" \
+            -o /tmp/upstream-vehicles.json
+
+      - name: Compare and sync
+        id: sync
+        run: |
+          TARGET="apps/web/src/lib/vehicles.json"
+          if cmp -s /tmp/upstream-vehicles.json "$TARGET"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes from upstream."
+          else
+            cp /tmp/upstream-vehicles.json "$TARGET"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies and validate
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          devbox run -- pnpm install --frozen-lockfile
+          devbox run -- pnpm run check
+          devbox run -- pnpm run typecheck
+
+      - name: Commit and push
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/src/lib/vehicles.json
+          git commit -m "chore: sync vehicles.json from commaai/website"
+          git push origin HEAD:master
