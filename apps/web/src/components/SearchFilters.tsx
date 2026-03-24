@@ -21,7 +21,6 @@ import {
   SORT_OPTIONS,
   SORT_LABELS,
   VEHICLE_MAKES,
-  VEHICLE_CONNECTORS,
   MIN_VEHICLE_YEAR,
   MAX_VEHICLE_YEAR,
 } from "@/lib/vehicles"
@@ -29,7 +28,6 @@ import {
 interface SearchFiltersProps {
   query: string
   make: string
-  connector: string
   minYear?: number
   maxYear?: number
   features: Array<FeatureFilter>
@@ -37,7 +35,6 @@ interface SearchFiltersProps {
   hasActiveFilters: boolean
   onQueryChange: (value: string) => void
   onMakeChange: (value: string | null) => void
-  onConnectorChange: (value: string | null) => void
   onYearChange: (
     minYear: number | undefined,
     maxYear: number | undefined
@@ -50,7 +47,6 @@ interface SearchFiltersProps {
 export function SearchFilters({
   query,
   make,
-  connector,
   minYear,
   maxYear,
   features,
@@ -58,7 +54,6 @@ export function SearchFilters({
   hasActiveFilters,
   onQueryChange,
   onMakeChange,
-  onConnectorChange,
   onYearChange,
   onFeaturesChange,
   onSortChange,
@@ -86,20 +81,6 @@ export function SearchFilters({
                 {VEHICLE_MAKES.map((makeOption) => (
                   <SelectItem key={makeOption} value={makeOption}>
                     {makeOption}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={connector} onValueChange={onConnectorChange}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Harness" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Harnesses</SelectItem>
-                {VEHICLE_CONNECTORS.map((connectorOption) => (
-                  <SelectItem key={connectorOption} value={connectorOption}>
-                    {connectorOption}
                   </SelectItem>
                 ))}
               </SelectContent>

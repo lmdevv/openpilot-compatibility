@@ -12,7 +12,6 @@ import { VehicleTable, SearchFilters, EmptyState } from "@/components"
 type IndexSearch = {
   q?: string
   make?: string
-  connector?: string
   minYear?: number
   maxYear?: number
   features?: Array<FeatureFilter>
@@ -28,7 +27,6 @@ export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): IndexSearch => ({
     q: parseOptionalString(search.q),
     make: parseOptionalString(search.make),
-    connector: parseOptionalString(search.connector),
     minYear: parseOptionalNumber(search.minYear),
     maxYear: parseOptionalNumber(search.maxYear),
     features: parseFeatureFilters(search.features),
@@ -226,7 +224,6 @@ function IndexRoute() {
   const navigate = useNavigate({ from: Route.fullPath })
   const query = search.q ?? ""
   const make = search.make ?? ""
-  const connector = search.connector ?? ""
   const minYear = search.minYear
   const maxYear = search.maxYear
   const features = search.features ?? []
@@ -236,10 +233,6 @@ function IndexRoute() {
   const filteredRows = useMemo(() => {
     const rows = VEHICLE_ROWS.filter((row) => {
       if (make && row.make !== make) {
-        return false
-      }
-
-      if (connector && row.harnessConnector !== connector) {
         return false
       }
 
@@ -258,12 +251,11 @@ function IndexRoute() {
     })
 
     return sortRows(rows, deferredQuery, sort)
-  }, [connector, deferredQuery, features, make, sort, minYear, maxYear])
+  }, [deferredQuery, features, make, sort, minYear, maxYear])
 
   const activeFilterCount =
     Number(query.length > 0) +
     Number(make.length > 0) +
-    Number(connector.length > 0) +
     features.length +
     Number(minYear !== undefined) +
     Number(maxYear !== undefined)
@@ -279,8 +271,6 @@ function IndexRoute() {
 
         if ("q" in patch) next.q = normalizeSearchString(patch.q)
         if ("make" in patch) next.make = normalizeSearchString(patch.make)
-        if ("connector" in patch)
-          next.connector = normalizeSearchString(patch.connector)
         if ("minYear" in patch) next.minYear = patch.minYear
         if ("maxYear" in patch) next.maxYear = patch.maxYear
         if ("features" in patch)
@@ -343,7 +333,6 @@ function IndexRoute() {
       <SearchFilters
         query={query}
         make={make}
-        connector={connector}
         minYear={minYear}
         maxYear={maxYear}
         features={features}
@@ -351,9 +340,6 @@ function IndexRoute() {
         hasActiveFilters={hasActiveFilters}
         onQueryChange={(value) => replaceSearch({ q: value })}
         onMakeChange={(value) => replaceSearch({ make: value ?? undefined })}
-        onConnectorChange={(value) =>
-          replaceSearch({ connector: value ?? undefined })
-        }
         onYearChange={(min, max) =>
           replaceSearch({ minYear: min, maxYear: max })
         }

@@ -541,14 +541,6 @@ export function getBrandLogo(make: string): string | null {
   return logoFile ? `/brand-icons/${logoFile}` : null
 }
 
-export const VEHICLE_CONNECTORS = [
-  ...new Set(
-    VEHICLE_ROWS.map((row) => row.harnessConnector).filter(
-      (connector) => connector.length > 0
-    )
-  ),
-].sort((left, right) => left.localeCompare(right))
-
 export const FEATURE_FILTER_OPTIONS = Object.keys(
   featureFilterLabels
 ) as Array<FeatureFilter>
