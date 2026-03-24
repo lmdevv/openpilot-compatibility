@@ -2,11 +2,25 @@ import {
   Outlet,
   HeadContent,
   Scripts,
+  ScriptOnce,
   createRootRoute,
 } from "@tanstack/react-router"
 
 import appCss from "@workspace/ui/globals.css?url"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
+
+const themeScript = `
+  (function() {
+    try {
+      const theme = window.localStorage.getItem('openpilot-theme') || 'system'
+      if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.add('light')
+      }
+    } catch (e) {}
+  })()
+`
 
 export const Route = createRootRoute({
   head: () => ({
@@ -58,6 +72,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <ScriptOnce children={themeScript} />
         <HeadContent />
       </head>
       <body>
