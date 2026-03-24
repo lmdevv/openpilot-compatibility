@@ -7,7 +7,12 @@ import {
   VEHICLE_STATS,
 } from "@/lib/vehicles"
 import type { FeatureFilter, SortKey, VehicleRow } from "@/lib/vehicles"
-import { VehicleTable, SearchFilters, EmptyState } from "@/components"
+import {
+  VehicleTable,
+  SearchFilters,
+  EmptyState,
+  ReferenceFooter,
+} from "@/components"
 import { ModeToggle } from "@workspace/ui/components/mode-toggle"
 
 type IndexSearch = {
@@ -368,6 +373,8 @@ function IndexRoute() {
 
         {filteredRows.length === 0 && <EmptyState onReset={resetFilters} />}
       </section>
+
+      <ReferenceFooter />
     </div>
   )
 }
