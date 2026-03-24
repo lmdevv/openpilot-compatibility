@@ -53,9 +53,8 @@ export const Route = createFileRoute("/")({
 })
 
 function parseOptionalString(value: unknown) {
-  return typeof value === "string" && value.trim().length > 0
-    ? value.trim()
-    : undefined
+  // Don't trim here - we want to preserve spaces for active typing
+  return typeof value === "string" && value.length > 0 ? value : undefined
 }
 
 function parseOptionalNumber(value: unknown) {
@@ -208,13 +207,8 @@ function sortRows(rows: Array<VehicleRow>, query: string, sort: SortKey) {
 }
 
 function normalizeSearchString(value: string | undefined) {
-  if (!value) {
-    return undefined
-  }
-
-  const trimmedValue = value.trim()
-
-  return trimmedValue.length > 0 ? trimmedValue : undefined
+  // Only filter out undefined and empty strings, preserve spaces for active typing
+  return value && value.length > 0 ? value : undefined
 }
 
 function normalizeFeatureSearch(value: Array<FeatureFilter> | undefined) {
