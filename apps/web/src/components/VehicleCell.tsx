@@ -32,7 +32,6 @@ export function VehicleCell({ row }: VehicleCellProps) {
           </Badge>
         ))}
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">{row.name}</p>
     </div>
   )
 }
