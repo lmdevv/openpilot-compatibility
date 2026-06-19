@@ -1,0 +1,38 @@
+name: Keep workflows active
+
+on:
+  schedule:
+    # Monthly activity prevents GitHub from disabling scheduled workflows for inactivity.
+    - cron: "17 3 1 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Update keepalive marker
+        run: date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/last-keepalive
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/last-keepalive
+          if git diff --cached --quiet -- .github/last-keepalive; then
+            echo "No keepalive changes to commit."
+          else
+            git commit -m "chore: keep scheduled workflows active"
+            git push origin HEAD:master
+          fi
